@@ -1,7 +1,11 @@
-import React from 'react';
+// Start.js
+
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
 
 const Start = ({ navigation }) => {
+  const [name, setName] = useState('');
+
   return (
     // Background image for the Start screen
     <ImageBackground
@@ -17,6 +21,8 @@ const Start = ({ navigation }) => {
           {/* Text input for user's name */}
           <TextInput
             style={styles.input}
+            value={name}
+            onChangeText={setName}
             placeholder='Your Name'
           />
 
@@ -34,7 +40,7 @@ const Start = ({ navigation }) => {
           {/* Button to start chatting and navigate to the Chat screen */}
           <TouchableOpacity
             style={styles.startChatButton}
-            onPress={() => navigation.navigate('Chat')}
+            onPress={() => navigation.navigate('Chat', { name: name })}
           >
             <Text style={styles.buttonText}>Start Chatting</Text>
           </TouchableOpacity>
@@ -53,7 +59,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: '12',
+    padding: 6,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   appTitle: {
