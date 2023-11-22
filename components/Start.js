@@ -1,35 +1,44 @@
 // Start.js
 
 import React from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
 
 const Start = ({ navigation }) => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.appTitle}>Chat App</Text>
-      <View style={styles.inputContainer}>
+    // Background image for the Start screen
+    <ImageBackground
+      source={require('../assets/background-image.png')}
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
+        <Text style={styles.appTitle}>Chat App</Text>
         <TextInput
           style={styles.input}
           placeholder='Enter your name'
         />
+        <TouchableOpacity
+          style={styles.startChatButton}
+          onPress={() => navigation.navigate('Chat')}
+        >
+          <Text style={styles.buttonText}>Start Chatting</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.startChatButton}
-        onPress={() => navigation.navigate('Chat')}
-      >
-        <Text style={styles.buttonText}>Start Chatting</Text>
-      </TouchableOpacity>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   container: {
-    backgroundColor: '#8A95A5',
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    // Semi-transparent overlay for better text visibility
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   appTitle: {
     fontSize: 45,
@@ -37,17 +46,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 20,
   },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
   input: {
     borderWidth: 1,
     borderColor: 'rgba(117, 112, 131, 0.5)',
     height: 50,
     padding: 10,
-    marginTop: 5,
     width: '100%',
+    marginBottom: 20,
   },
   startChatButton: {
     backgroundColor: '#757083',
