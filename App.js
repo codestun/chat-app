@@ -1,21 +1,33 @@
-import { useState } from 'react';
+// App.js
+
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Start from './components/Start'; // Importing the Start component
+import Chat from './components/Chat';   // Importing the Chat component
+
+const Stack = createNativeStackNavigator();
 
 const App = () => {
   const [text, setText] = useState('');
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.textInput}
-        value={text}
-        onChangeText={setText}
-        placeholder='Type Something Here'
-      />
-      <Text style={styles.textDisplay}>You wrote: {text}</Text>
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Start">
+        <Stack.Screen
+          name="Start"
+          component={Start}
+        />
+        <Stack.Screen
+          name="Chat"
+          component={Chat}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
