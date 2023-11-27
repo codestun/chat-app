@@ -1,7 +1,7 @@
 // Start.js
 
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ImageBackground } from 'react-native';
+import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const Start = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -10,6 +10,8 @@ const Start = ({ navigation }) => {
   const handleColorChange = (color) => {
     setSelectedColor(color);
   };
+
+  const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
 
   return (
     // Background image for the Start screen
@@ -35,22 +37,15 @@ const Start = ({ navigation }) => {
           <View style={styles.colorOptions}>
             <Text style={styles.chooseColorText}>Choose Background Color:</Text>
             <View style={styles.colorOptionRow}>
-              <TouchableOpacity
-                style={[styles.colorOption, { backgroundColor: '#090C08' }]}
-                onPress={() => handleColorChange('#090C08')}
-              />
-              <TouchableOpacity
-                style={[styles.colorOption, { backgroundColor: '#474056' }]}
-                onPress={() => handleColorChange('#474056')}
-              />
-              <TouchableOpacity
-                style={[styles.colorOption, { backgroundColor: '#8A95A5' }]}
-                onPress={() => handleColorChange('#8A95A5')}
-              />
-              <TouchableOpacity
-                style={[styles.colorOption, { backgroundColor: '#B9C6AE' }]}
-                onPress={() => handleColorChange('#B9C6AE')}
-              />
+              {
+                colors.map(color => <TouchableOpacity
+                  style={[
+                    selectedColor === color ? styles.colorOptionHighlighted : styles.colorOption,
+                    { backgroundColor: color },
+                  ]}
+                  onPress={() => handleColorChange(color)}
+                />)
+              }
             </View>
           </View>
 
@@ -129,6 +124,14 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginHorizontal: 5,
+  },
+  colorOptionHighlighted: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    marginHorizontal: 5,
+    borderColor: '#757083',
+    borderWidth: 4,
   },
   startChatButton: {
     backgroundColor: '#757083',
