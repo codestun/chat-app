@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GiftedChat } from "react-native-gifted-chat";
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
 
 const Chat = ({ route, navigation }) => {
   const [messages, setMessages] = useState([]);
@@ -38,6 +38,8 @@ const Chat = ({ route, navigation }) => {
         }}
         renderUsernameOnMessage
       />
+      {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
+      {/* KeyboardAvoidingView: Adjusts keyboard behavior for Android */}
     </View>
   );
 }
