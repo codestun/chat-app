@@ -1,7 +1,7 @@
 // Start.js
 
 import React, { useState } from 'react';
-import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, KeyboardAvoidingView } from 'react-native';
 
 const Start = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -38,13 +38,16 @@ const Start = ({ navigation }) => {
             <Text style={styles.chooseColorText}>Choose Background Color:</Text>
             <View style={styles.colorOptionRow}>
               {
-                colors.map(color => <TouchableOpacity
-                  style={[
-                    selectedColor === color ? styles.colorOptionHighlighted : styles.colorOption,
-                    { backgroundColor: color },
-                  ]}
-                  onPress={() => handleColorChange(color)}
-                />)
+                colors.map(color => (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      selectedColor === color ? styles.colorOptionHighlighted : styles.colorOption,
+                      { backgroundColor: color },
+                    ]}
+                    onPress={() => handleColorChange(color)}
+                  />
+                ))
               }
             </View>
           </View>
@@ -59,10 +62,19 @@ const Start = ({ navigation }) => {
             <Text style={styles.buttonText}>Start Chatting</Text>
           </TouchableOpacity>
         </View>
+
+        {/* KeyboardAvoidingView to handle keyboard behavior */}
+        {Platform.OS === 'ios' ? (
+          <KeyboardAvoidingView behavior="padding">
+            {/* Add a space to avoid covering the Text Input */}
+            <View style={styles.keyboardSpacer} />
+          </KeyboardAvoidingView>
+        ) : null}
       </View>
     </ImageBackground>
   );
 }
+
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
@@ -88,9 +100,8 @@ const styles = StyleSheet.create({
     height: '44%',
     alignItems: 'center', // Center the content horizontally
     backgroundColor: '#FFFFFF',
+    borderRadius: 5, // Add some border radius for a rounded look,
     padding: 6,
-    marginBottom: 30,
-    borderRadius: 5, // Add some border radius for a rounded look
     justifyContent: "space-evenly"
   },
   input: {
@@ -98,21 +109,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(117, 112, 131, 0.5)',
     height: 50,
     padding: 10,
+    borderRadius: 5,
     width: '88%',
-    marginBottom: 20,
     fontSize: 16,
     fontWeight: '300',
     color: 'rgba(117, 112, 131, 0.5)',
   },
   colorOptions: {
     width: '88%',
-    marginBottom: 20,
   },
   chooseColorText: {
     fontSize: 16,
     fontWeight: '300',
     color: '#757083',
-    marginBottom: 15,
+    marginBottom: 10,
     opacity: 1, // 100% opacity
   },
   colorOptionRow: {
@@ -144,6 +154,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  keyboardSpacer: {
+    height: 30
   },
 });
 
