@@ -1,12 +1,17 @@
 // App.js
 
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput } from 'react-native';
+// Import the screens
+import Start from './components/Start';
+import Chat from './components/Chat';
+
+// Import react Navigation
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Start from './components/Start'; // Importing the Start component
-import Chat from './components/Chat';   // Importing the Chat component
 
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TextInput } from 'react-native';
+
+// Create the navigator
 const Stack = createNativeStackNavigator();
 
 const App = () => {
