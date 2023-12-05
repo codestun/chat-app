@@ -1,5 +1,8 @@
 // App.js
 
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+
 // Import the screens
 import Start from './components/Start';
 import Chat from './components/Chat';
@@ -15,6 +18,23 @@ import { StyleSheet, View, Text, TextInput } from 'react-native';
 const Stack = createNativeStackNavigator();
 
 const App = () => {
+  // My web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCtAWPqWSTfT9jONiKqMbuC8QpXnDZViE4",
+    authDomain: "chatapp-a8044.firebaseapp.com",
+    projectId: "chatapp-a8044",
+    storageBucket: "chatapp-a8044.appspot.com",
+    messagingSenderId: "183337411955",
+    appId: "1:183337411955:web:ba1bab39d58b03f8b39106",
+    measurementId: "G-6CL7E8CT84"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+
+  // Initialize Cloud Firestore and get a reference to the service
+  const db = getFirestore(app);
+
   const [text, setText] = useState('');
 
   return (
