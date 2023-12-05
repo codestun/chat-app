@@ -2,16 +2,33 @@
 
 import React, { useState } from 'react';
 import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, KeyboardAvoidingView } from 'react-native';
+import { getAuth, signInAnonymously } from 'firebase/auth'; // Import Firebase authentication functions
 
 const Start = ({ navigation }) => {
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState('#090C08'); // Default color
+  const auth = getAuth(); // Initialize Firebase Authentication
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
   };
 
   const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
+
+  // Function to handle anonymous sign-in
+  const signInUser = () => {
+    signInAnonymously(auth)
+      .then((result) => {
+        // Check if user is logged in (user will have a UID)
+        if (result.user && result.user.uid) {
+          // Navigate to the Chat screen with user parameters
+          navigation.navigate('Chat', { userId: result.user.uid, name: name, backgroundColor: selectedColor });
+        }
+      })
+      .catch((error) => {
+        console.error('Error signing in anonymously:', error);
+      });
+  };
 
   return (
     // Background image for the Start screen
@@ -30,34 +47,30 @@ const Start = ({ navigation }) => {
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholder='Your Name'
+            placeholder="Your Name"
           />
 
           {/* Color options */}
           <View style={styles.colorOptions}>
             <Text style={styles.chooseColorText}>Choose Background Color:</Text>
             <View style={styles.colorOptionRow}>
-              {
-                colors.map(color => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      selectedColor === color ? styles.colorOptionHighlighted : styles.colorOption,
-                      { backgroundColor: color },
-                    ]}
-                    onPress={() => handleColorChange(color)}
-                  />
-                ))
-              }
+              {colors.map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    selectedColor === color ? styles.colorOptionHighlighted : styles.colorOption,
+                    { backgroundColor: color },
+                  ]}
+                  onPress={() => handleColorChange(color)}
+                />
+              ))}
             </View>
           </View>
 
           {/* Button to start chatting and navigate to the Chat screen */}
           <TouchableOpacity
             style={styles.startChatButton}
-            onPress={() =>
-              navigation.navigate('Chat', { name: name, backgroundColor: selectedColor })
-            }
+            onPress={signInUser} // Call the signInUser function
           >
             <Text style={styles.buttonText}>Start Chatting</Text>
           </TouchableOpacity>
@@ -73,7 +86,7 @@ const Start = ({ navigation }) => {
       </View>
     </ImageBackground>
   );
-}
+};
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -92,7 +105,7 @@ const styles = StyleSheet.create({
     fontSize: 45,
     fontWeight: '600',
     color: '#FFFFFF',
-    alignSelf: "center",
+    alignSelf: 'center',
     marginTop: 120,
   },
   contentContainer: {
@@ -102,7 +115,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 5, // Add some border radius for a rounded look,
     padding: 6,
-    justifyContent: "space-evenly"
+    justifyContent: 'space-evenly',
   },
   input: {
     borderWidth: 1,
@@ -156,7 +169,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   keyboardSpacer: {
-    height: 30
+    height: 30,
   },
 });
 
