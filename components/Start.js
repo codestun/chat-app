@@ -1,7 +1,7 @@
 // Start.js
 
 import React, { useState } from 'react';
-import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, KeyboardAvoidingView } from 'react-native';
+import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform, KeyboardAvoidingView, Alert } from 'react-native';
 import { getAuth, signInAnonymously } from 'firebase/auth'; // Import Firebase authentication functions
 
 const Start = ({ navigation }) => {
@@ -23,12 +23,16 @@ const Start = ({ navigation }) => {
         if (result.user && result.user.uid) {
           // Navigate to the Chat screen with user parameters
           navigation.navigate('Chat', { userId: result.user.uid, name: name, backgroundColor: selectedColor });
+          // Display success message
+          Alert.alert("Signed in Successfully!");
         }
       })
       .catch((error) => {
         console.error('Error signing in anonymously:', error);
+        Alert.alert("Unable to sign in, try again later.");
       });
   };
+
 
   return (
     // Background image for the Start screen
