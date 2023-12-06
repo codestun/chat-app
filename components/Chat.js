@@ -37,25 +37,32 @@ const Chat = ({ route, navigation, db }) => {
       },
     ];
 
-    setMessages(GiftedChat.append([], initialMessages));
+    // Query to fetch messages from Firestore, ordered by creation time
+    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+    const unsubMessages = onSnapshot(q, (snapshot) => {
+      let newMessages = [];
+      snapshot.forEach(doc => {
+        const firebaseData = doc.data();
 
-    // Real-time listener for Firestore messages
-    const messagesQuery = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const fetchedMessages = snapshot.docs.map(doc => {
-        const data = { ...doc.data(), _id: doc.id };
-        // Convert Firestore timestamp to JavaScript Date object
-        if (data.createdAt?.seconds) {
-          data.createdAt = new Date(data.createdAt.seconds * 1000);
-        }
-        return data;
+        // Converting the Firestore Timestamp to JavaScript Date object
+        const createdAt = firebaseData.createdAt ? new Date(firebaseData.createdAt.seconds * 1000) : new Date();
+
+        // Structure the message in the format expected by GiftedChat
+        newMessages.push({
+          _id: doc.id,
+          text: firebaseData.text,
+          createdAt: createdAt,
+          user: firebaseData.user
+        });
       });
 
-      // Update the state with the fetched messages
-      setMessages(previousMessages => GiftedChat.append(fetchedMessages, previousMessages));
+      // Set the fetched messages, keeping initial messages at the beginning
+      setMessages(GiftedChat.append(initialMessages, newMessages));
     });
 
-    return () => unsubscribe(); // Cleanup the listener
+    return () => {
+      if (unsubMessages) unsubMessages();
+    }
   }, []);
 
   return (
