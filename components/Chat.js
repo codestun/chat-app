@@ -7,11 +7,21 @@ import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firesto
 
 const Chat = ({ route, navigation, db }) => {
   const [messages, setMessages] = useState([]);
-  const { name, backgroundColor } = route.params;
+  const { name, backgroundColor, userId } = route.params;
 
   // Function to handle sending messages to Firestore
   const onSend = (newMessages = []) => {
-    addDoc(collection(db, "messages"), newMessages[0]);
+    if (newMessages.length > 0) {
+      const messageToSend = {
+        ...newMessages[0],
+        user: {
+          _id: userId,
+          name: name
+        },
+        createdAt: new Date() // Set the current date/time as createdAt
+      };
+      addDoc(collection(db, "messages"), messageToSend);
+    }
   };
 
   useEffect(() => {
@@ -19,16 +29,6 @@ const Chat = ({ route, navigation, db }) => {
 
     // Initial welcome and status messages
     const initialMessages = [
-      {
-        _id: 1,
-        text: "Hello developer",
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: "React Native",
-          avatar: "https://placeimg.com/140/140/any",
-        },
-      },
       {
         _id: 2,
         text: `${name} has entered the chat`,
