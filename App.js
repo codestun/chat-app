@@ -1,5 +1,9 @@
 // App.js
 
+import React from 'react';
+// Import react Navigation
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
@@ -7,18 +11,11 @@ import { getFirestore } from "firebase/firestore";
 import Start from './components/Start';
 import Chat from './components/Chat';
 
-// Import react Navigation
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput } from 'react-native';
-
 // Create the navigator
 const Stack = createNativeStackNavigator();
 
 const App = () => {
-  // My web app's Firebase configuration
+  // Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyCtAWPqWSTfT9jONiKqMbuC8QpXnDZViE4",
     authDomain: "chatapp-a8044.firebaseapp.com",
@@ -30,45 +27,21 @@ const App = () => {
   };
 
   // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+  initializeApp(firebaseConfig);
 
   // Initialize Cloud Firestore and get a reference to the service
-  const db = getFirestore(app);
-
-  const [text, setText] = useState('');
+  const db = getFirestore();
 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Start">
-        <Stack.Screen
-          name="Start"
-          component={Start}
-        />
-        <Stack.Screen
-          name="Chat"
-          component={Chat}
-        />
+        <Stack.Screen name="Start" component={Start} />
+        <Stack.Screen name="Chat">
+          {props => <Chat {...props} db={db} />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  textInput: {
-    width: '88%',
-    borderWidth: 1,
-    height: 50,
-    padding: 10
-  },
-  textDisplay: {
-    height: 50,
-    lineHeight: 50
-  }
-});
+};
 
 export default App;

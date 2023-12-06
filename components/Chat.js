@@ -3,18 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import { GiftedChat } from "react-native-gifted-chat";
 import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
+import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firestore";
 
-const Chat = ({ route, navigation }) => {
+const Chat = ({ route, navigation, db }) => {
   const [messages, setMessages] = useState([]);
   const { name, backgroundColor } = route.params;
 
+  // Function to handle sending messages to Firestore
   const onSend = (newMessages = []) => {
-    setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages));
+    addDoc(collection(db, "messages"), newMessages[0]);
   };
 
   useEffect(() => {
     navigation.setOptions({ title: name });
-    setMessages([
+
+    // Initial welcome and status messages
+    const initialMessages = [
       {
         _id: 1,
         text: "Hello developer",
@@ -31,7 +35,27 @@ const Chat = ({ route, navigation }) => {
         createdAt: new Date(),
         system: true,
       },
-    ]);
+    ];
+
+    setMessages(GiftedChat.append([], initialMessages));
+
+    // Real-time listener for Firestore messages
+    const messagesQuery = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const fetchedMessages = snapshot.docs.map(doc => {
+        const data = { ...doc.data(), _id: doc.id };
+        // Convert Firestore timestamp to JavaScript Date object
+        if (data.createdAt?.seconds) {
+          data.createdAt = new Date(data.createdAt.seconds * 1000);
+        }
+        return data;
+      });
+
+      // Update the state with the fetched messages
+      setMessages(previousMessages => GiftedChat.append(fetchedMessages, previousMessages));
+    });
+
+    return () => unsubscribe(); // Cleanup the listener
   }, []);
 
   return (
@@ -39,13 +63,10 @@ const Chat = ({ route, navigation }) => {
       <GiftedChat
         messages={messages}
         onSend={messages => onSend(messages)}
-        user={{
-          _id: 1
-        }}
+        user={{ _id: 1 }}
         renderUsernameOnMessage
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
-      {/* KeyboardAvoidingView: Adjusts keyboard behavior for Android */}
     </View>
   );
 }
