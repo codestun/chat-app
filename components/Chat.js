@@ -70,7 +70,7 @@ const Chat = ({ route, navigation, db }) => {
       <GiftedChat
         messages={messages}
         onSend={messages => onSend(messages)}
-        user={{ _id: 1 }}
+        user={{ _id: userId, name: name }} // Updated user prop
         renderUsernameOnMessage
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
