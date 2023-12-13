@@ -1,11 +1,13 @@
 // App.js
 
-import React from 'react';
+import React, { useEffect } from 'react'; // Import useEffect for side effects
 // Import react Navigation
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { enableNetwork, disableNetwork } from "firebase/firestore"; // Import Firestore functions
+import { useNetInfo } from "@react-native-community/netinfo"; // Import useNetInfo for network detection
 
 // Import the screens
 import Start from './components/Start';
@@ -28,16 +30,25 @@ const App = () => {
 
   // Initialize Firebase
   initializeApp(firebaseConfig);
+  const db = getFirestore();  // Get a reference to Firestore
 
-  // Initialize Cloud Firestore and get a reference to the service
-  const db = getFirestore();
+  const netInfo = useNetInfo(); // Use useNetInfo to monitor network status
+
+  useEffect(() => {
+    // This effect runs when netInfo.isConnected changes
+    if (netInfo.isConnected) {
+      enableNetwork(db);
+    } else {
+      disableNetwork(db);
+    }
+  }, [netInfo.isConnected]);
 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Start">
         <Stack.Screen name="Start" component={Start} />
         <Stack.Screen name="Chat">
-          {props => <Chat {...props} db={db} />}
+          {props => <Chat {...props} db={db} isConnected={netInfo.isConnected} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
