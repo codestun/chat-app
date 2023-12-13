@@ -1,6 +1,6 @@
 // Chat.js
 import React, { useState, useEffect } from 'react';
-import { GiftedChat } from "react-native-gifted-chat";
+import { GiftedChat, InputToolbar } from "react-native-gifted-chat";
 import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
 import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firestore";
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
@@ -22,6 +22,13 @@ const Chat = ({ route, navigation, db, isConnected }) => {
       };
       addDoc(collection(db, "messages"), messageToSend);
     }
+  };
+
+  // Function to conditionally render the InputToolbar
+  const renderInputToolbar = (props) => {
+    // Only render InputToolbar if there is a network connection
+    if (isConnected) return <InputToolbar {...props} />;
+    else return null;
   };
 
   let unsubMessages; // Declare outside useEffect
@@ -88,6 +95,7 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         onSend={messages => onSend(messages)}
         user={{ _id: userId, name: name }}
         renderUsernameOnMessage
+        renderInputToolbar={renderInputToolbar} // Use the custom InputToolbar rendering function
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
     </View>
