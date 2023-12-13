@@ -1,11 +1,11 @@
 // Chat.js
-
 import React, { useState, useEffect } from 'react';
 import { GiftedChat } from "react-native-gifted-chat";
 import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
 import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firestore";
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
-const Chat = ({ route, navigation, db }) => {
+const Chat = ({ route, navigation, db, isConnected }) => {
   const [messages, setMessages] = useState([]);
   const { name, backgroundColor, userId } = route.params;
 
@@ -37,46 +37,56 @@ const Chat = ({ route, navigation, db }) => {
       },
     ];
 
-    // Query to fetch messages from Firestore, ordered by creation time
-    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-    const unsubMessages = onSnapshot(q, (snapshot) => {
-      let newMessages = [];
-      snapshot.forEach(doc => {
-        const firebaseData = doc.data();
+    let unsubMessages; // Declare unsubscribe function
 
-        // Converting the Firestore Timestamp to JavaScript Date object
-        const createdAt = firebaseData.createdAt ? new Date(firebaseData.createdAt.seconds * 1000) : new Date();
+    if (isConnected) {
+      // If there is a network connection, fetch messages from Firestore
+      const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+      unsubMessages = onSnapshot(q, (snapshot) => {
+        let newMessages = snapshot.docs.map(doc => {
+          const firebaseData = doc.data();
 
-        // Structure the message in the format expected by GiftedChat
-        newMessages.push({
-          _id: doc.id,
-          text: firebaseData.text,
-          createdAt: createdAt,
-          user: firebaseData.user
+          // Converting the Firestore Timestamp to JavaScript Date object
+          const createdAt = firebaseData.createdAt ? new Date(firebaseData.createdAt.seconds * 1000) : new Date();
+
+          // Structure the message in the format expected by GiftedChat
+          newMessages.push({
+            _id: doc.id,
+            text: firebaseData.text,
+            createdAt,
+            user: firebaseData.user
+          });
         });
+
+        setMessages(GiftedChat.append(initialMessages, newMessages));
       });
-
-      // Set the fetched messages, keeping initial messages at the beginning
-      setMessages(GiftedChat.append(initialMessages, newMessages));
-    });
-
-    return () => {
-      if (unsubMessages) unsubMessages();
+    } else {
+      // If not connected, load messages from AsyncStorage
+      AsyncStorage.getItem('messages').then(storedMessages => {
+        if (storedMessages) {
+          setMessages(JSON.parse(storedMessages));
+        }
+      });
     }
-  }, []);
+
+    // Cleanup function
+    return () => {
+      if (unsubMessages) unsubMessages(); // Unsubscribe from Firestore updates
+    };
+  }, [isConnected, db, route.params]); // Add dependencies
 
   return (
     <View style={[styles.container, { backgroundColor: backgroundColor }]}>
       <GiftedChat
         messages={messages}
         onSend={messages => onSend(messages)}
-        user={{ _id: userId, name: name }} // Updated user prop
+        user={{ _id: userId, name: name }}
         renderUsernameOnMessage
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
