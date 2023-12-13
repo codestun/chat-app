@@ -24,6 +24,8 @@ const Chat = ({ route, navigation, db, isConnected }) => {
     }
   };
 
+  let unsubMessages; // Declare outside useEffect
+
   useEffect(() => {
     navigation.setOptions({ title: name });
 
@@ -37,13 +39,15 @@ const Chat = ({ route, navigation, db, isConnected }) => {
       },
     ];
 
-    let unsubMessages; // Declare unsubscribe function
-
     if (isConnected) {
-      // If there is a network connection, fetch messages from Firestore
+      // Unregister current onSnapshot listener to avoid multiple listeners
+      if (unsubMessages) unsubMessages();
+      unsubMessages = null;
+
       const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
       unsubMessages = onSnapshot(q, (snapshot) => {
-        let newMessages = snapshot.docs.map(doc => {
+        let newMessages = [];
+        snapshot.forEach(doc => { // Ensure data structure aligns with GiftedChat
           const firebaseData = doc.data();
 
           // Converting the Firestore Timestamp to JavaScript Date object
@@ -58,6 +62,9 @@ const Chat = ({ route, navigation, db, isConnected }) => {
           });
         });
 
+        // Cache the new messages
+        AsyncStorage.setItem('messages', JSON.stringify(newMessages));
+
         setMessages(GiftedChat.append(initialMessages, newMessages));
       });
     } else {
@@ -68,7 +75,6 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         }
       });
     }
-
     // Cleanup function
     return () => {
       if (unsubMessages) unsubMessages(); // Unsubscribe from Firestore updates
