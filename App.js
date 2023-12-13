@@ -35,12 +35,14 @@ const App = () => {
   const netInfo = useNetInfo(); // Use useNetInfo to monitor network status
 
   useEffect(() => {
-    // This effect runs when netInfo.isConnected changes
-    if (netInfo.isConnected) {
-      enableNetwork(db);
-    } else {
-      Alert.alert("Connection Lost!"); // Using Alert for showing connection status
-      disableNetwork(db);
+    // Only proceed if isConnected is not null
+    if (netInfo.isConnected !== null) {
+      if (netInfo.isConnected) {
+        enableNetwork(db);
+      } else {
+        Alert.alert("Connection Lost!"); // Show alert only when isConnected is explicitly false
+        disableNetwork(db);
+      }
     }
   }, [netInfo.isConnected]);
 
