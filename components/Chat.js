@@ -1,9 +1,11 @@
 // Chat.js
+
 import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text, ActionSheetIOS } from 'react-native';
 import { GiftedChat, InputToolbar } from "react-native-gifted-chat";
-import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
 import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firestore";
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomActions from './CustomActions';
 
 const Chat = ({ route, navigation, db, isConnected }) => {
   const [messages, setMessages] = useState([]);
@@ -27,8 +29,37 @@ const Chat = ({ route, navigation, db, isConnected }) => {
   // Function to conditionally render the InputToolbar
   const renderInputToolbar = (props) => {
     // Only render InputToolbar if there is a network connection
-    if (isConnected) return <InputToolbar {...props} />;
-    else return null;
+    if (isConnected) {
+      return (
+        <InputToolbar {...props}>
+          <TouchableOpacity onPress={showActionSheet} style={styles.actionButton}>
+            <Text style={styles.actionButtonText}>+</Text>
+          </TouchableOpacity>
+        </InputToolbar>
+      );
+    } else return null;
+  };
+
+  // Function to show ActionSheet
+  const showActionSheet = () => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ["Cancel", "Send Image", "Send Location"],
+        cancelButtonIndex: 0,
+      },
+      buttonIndex => {
+        if (buttonIndex === 1) {
+          // Logic for choosing image from library or taking a photo
+        } else if (buttonIndex === 2) {
+          // Logic for sharing location
+        }
+      },
+    );
+  };
+
+  // Custom Actions render function
+  const renderCustomActions = (props) => {
+    return <CustomActions {...props} />;
   };
 
   let unsubMessages; // Declare outside useEffect
@@ -96,6 +127,7 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         user={{ _id: userId, name: name }}
         renderUsernameOnMessage
         renderInputToolbar={renderInputToolbar} // Use the custom InputToolbar rendering function
+        renderActions={renderCustomActions} // Add renderActions prop to GiftedChat
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
     </View>
@@ -105,6 +137,14 @@ const Chat = ({ route, navigation, db, isConnected }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  actionButton: {
+    marginLeft: 10,
+    marginBottom: 10,
+  },
+  actionButtonText: {
+    color: 'blue',
+    fontSize: 16,
   },
 });
 
