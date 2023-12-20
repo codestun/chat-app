@@ -5,6 +5,7 @@ import { View, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as Location from 'expo-location';
 
 const CustomActions = ({ storage, onSend, userId }) => {
   const { showActionSheetWithOptions } = useActionSheet();
@@ -71,6 +72,30 @@ const CustomActions = ({ storage, onSend, userId }) => {
     });
   };
 
+  // Function to handle sending location
+  const sendLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission to access location was denied');
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    if (location) {
+      onSend([{
+        _id: Math.round(Math.random() * 1000000),
+        createdAt: new Date(),
+        user: {
+          _id: userId,
+        },
+        location: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+      }]);
+    }
+  };
+
   // Display the action sheet with options
   const onActionPress = () => {
     const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
@@ -83,7 +108,9 @@ const CustomActions = ({ storage, onSend, userId }) => {
           pickImage();
         } else if (buttonIndex === 1) {
           takePhoto();  // Call the takePhoto function
-        } // Add additional options as needed
+        } else if (buttonIndex === 2) {
+          sendLocation();
+        }
       }
     );
   };
