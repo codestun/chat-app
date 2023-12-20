@@ -5,6 +5,7 @@ import React, { useEffect } from 'react'; // Import useEffect for side effects
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { initializeApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
 import { getFirestore, enableNetwork, disableNetwork } from "firebase/firestore"; // Import Firestore functions
 import { useNetInfo } from "@react-native-community/netinfo"; // Import useNetInfo for network detection
 import { Alert } from 'react-native';  // Import Alert
@@ -29,8 +30,11 @@ const App = () => {
   };
 
   // Initialize Firebase
-  initializeApp(firebaseConfig);
-  const db = getFirestore();  // Get a reference to Firestore
+  const app = initializeApp(firebaseConfig);
+
+  //Initialize Firestore and Storage
+  const db = getFirestore();
+  const storage = getStorage(app);
 
   const netInfo = useNetInfo(); // Use useNetInfo to monitor network status
 
@@ -51,7 +55,7 @@ const App = () => {
       <Stack.Navigator initialRouteName="Start">
         <Stack.Screen name="Start" component={Start} />
         <Stack.Screen name="Chat">
-          {props => <Chat {...props} db={db} isConnected={netInfo.isConnected} />}
+          {props => <Chat {...props} db={db} storage={storage} isConnected={netInfo.isConnected} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
