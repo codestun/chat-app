@@ -98,6 +98,44 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
     }
   };
 
+  // Function to start recording
+  const startRecording = async () => {
+    try {
+      let permissions = await Audio.requestPermissionsAsync();
+      if (permissions.granted) {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+        recordingObject = recording;
+      } else {
+        Alert.alert('Microphone permission not granted');
+      }
+    } catch (err) {
+      Alert.alert('Failed to start recording', err.message);
+    }
+  };
+
+  // Function to stop recording
+  const stopRecording = async () => {
+    await recordingObject.stopAndUnloadAsync();
+  };
+
+  // Function to send recorded audio
+  const sendRecordedSound = async () => {
+    await stopRecording();
+    const uri = await recordingObject.getURI();
+    const uniqueRefString = generateReference(uri);
+    const newUploadRef = ref(storage, `audios/${uniqueRefString}`);
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    uploadBytes(newUploadRef, blob).then(async (snapshot) => {
+      const audioURL = await getDownloadURL(snapshot.ref);
+      onSend([{ _id: Math.round(Math.random() * 1000000), createdAt: new Date(), user: { _id: userId }, audio: audioURL }]);
+    });
+  };
+
   // Display the action sheet with options
   const onActionPress = () => {
     const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
