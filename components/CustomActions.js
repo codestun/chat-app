@@ -6,9 +6,11 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as Location from 'expo-location';
+import { Audio } from 'expo-av';
 
-const CustomActions = ({ storage, onSend, userId }) => {
+const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId }) => {
   const { showActionSheetWithOptions } = useActionSheet();
+  let recordingObject = null;
 
   // Function to handle image picking from the library
   const pickImage = async () => {
