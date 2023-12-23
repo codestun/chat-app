@@ -1,6 +1,6 @@
 // CustomActions.js
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import * as ImagePicker from 'expo-image-picker';
@@ -161,6 +161,15 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
       }
     );
   };
+
+  // useEffect to handle the cleanup of recordingObject
+  useEffect(() => {
+    return () => {
+      if (recordingObject) {
+        recordingObject.stopAndUnloadAsync();
+      }
+    };
+  }, []);
 
   // Render the '+' icon for custom actions
   return (
