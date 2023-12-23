@@ -118,6 +118,7 @@ const Chat = ({ route, navigation, db, storage, isConnected }) => {
         renderInputToolbar={renderInputToolbar}
         renderActions={renderCustomActions}
         renderCustomView={renderCustomView}
+        renderMessageAudio={renderMessageAudio}
       />
       {Platform.OS === 'android' && <KeyboardAvoidingView behavior="height" />}
     </View>
