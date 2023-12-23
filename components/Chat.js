@@ -108,6 +108,15 @@ const Chat = ({ route, navigation, db, storage, isConnected }) => {
     }
   }, [isConnected, db, route.params]);
 
+  useEffect(() => {
+    // Cleanup function to unload sound object
+    return () => {
+      if (soundObject) {
+        soundObject.unloadAsync();
+      }
+    };
+  }, []);
+
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <GiftedChat
