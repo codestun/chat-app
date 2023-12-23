@@ -138,18 +138,25 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
 
   // Display the action sheet with options
   const onActionPress = () => {
-    const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
+    const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Record a Sound', 'Cancel'];
     const cancelButtonIndex = options.length - 1;
 
     showActionSheetWithOptions(
       { options, cancelButtonIndex },
       (buttonIndex) => {
-        if (buttonIndex === 0) {
-          pickImage();
-        } else if (buttonIndex === 1) {
-          takePhoto();  // Call the takePhoto function
-        } else if (buttonIndex === 2) {
-          sendLocation();
+        switch (buttonIndex) {
+          case 0:
+            pickImage();
+            break;
+          case 1:
+            takePhoto();
+            break;
+          case 2:
+            sendLocation();
+            break;
+          case 3:
+            startRecording();
+            break;
         }
       }
     );
