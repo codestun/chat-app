@@ -7,10 +7,12 @@ import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firesto
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomActions from './CustomActions';
 import MapView from 'react-native-maps';
+import { Audio } from 'expo-av';
 
 const Chat = ({ route, navigation, db, storage, isConnected }) => {
   const [messages, setMessages] = useState([]);
   const { name, backgroundColor, userId } = route.params;
+  let soundObject = null; // Declare a variable to hold the sound object
 
   // Sends messages to Firestore
   const onSend = (newMessages = []) => {
@@ -49,6 +51,28 @@ const Chat = ({ route, navigation, db, storage, isConnected }) => {
     }
     return null;
   };
+
+  const renderMessageAudio = (props) => {
+    if (props.currentMessage.audio) {
+      return (
+        <TouchableOpacity
+          style={{ padding: 10, backgroundColor: "#ddd", borderRadius: 10, margin: 5 }}
+          onPress={async () => {
+            if (soundObject) {
+              soundObject.unloadAsync();
+            }
+            const { sound } = await Audio.Sound.createAsync({ uri: props.currentMessage.audio });
+            soundObject = sound;
+            await sound.playAsync();
+          }}
+        >
+          <Text>Play Audio</Text>
+        </TouchableOpacity>
+      );
+    }
+    return null;
+  };
+
 
   useEffect(() => {
     navigation.setOptions({ title: name });
