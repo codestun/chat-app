@@ -8,11 +8,21 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as Location from 'expo-location';
 import { Audio } from 'expo-av';
 
+// CustomActions component for handling image, audio, and location sharing
 const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId }) => {
   const { showActionSheetWithOptions } = useActionSheet();
   let recordingObject = null;
 
-  // Function to handle image picking from the library
+  // Cleanup recording object on component unmount
+  useEffect(() => {
+    return () => {
+      if (recordingObject) {
+        recordingObject.stopAndUnloadAsync();
+      }
+    };
+  }, []);
+
+  // Pick an image from the device library
   const pickImage = async () => {
     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permissions.granted) {
@@ -28,7 +38,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
     }
   };
 
-  // Function to handle taking a photo using the camera
+  // Take a photo using the device camera
   const takePhoto = async () => {
     let cameraPermissions = await ImagePicker.requestCameraPermissionsAsync();
     if (cameraPermissions.granted) {
@@ -43,14 +53,15 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
     }
   };
 
-  // Function to generate a unique reference for each image
+  // Generate a unique reference for each image or audio file
   const generateReference = (uri) => {
     const timeStamp = new Date().getTime();
-    const imageName = uri.split("/").pop();
+    const parts = uri.split("/");
+    const imageName = parts.length > 0 ? parts[parts.length - 1] : `unknown-${timeStamp}`;
     return `${userId}-${timeStamp}-${imageName}`;
   };
 
-  // Function to upload the image to Firebase Storage and send the image URL as a message
+  // Upload image to Firebase Storage and send the image URL as a message
   const uploadAndSendImage = async (uri) => {
     const uniqueRefString = generateReference(uri);
     const storageRef = ref(storage, `images/${uniqueRefString}`);
@@ -59,22 +70,26 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
     const blob = await response.blob();
 
     uploadBytes(storageRef, blob).then(async (snapshot) => {
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      const imageMessage = {
-        _id: Math.round(Math.random() * 1000000),
-        createdAt: new Date(),
-        user: {
-          _id: userId,
-        },
-        image: downloadURL,
-      };
-      onSend([imageMessage]);
+      try {
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        const imageMessage = {
+          _id: Math.round(Math.random() * 1000000),
+          createdAt: new Date(),
+          user: {
+            _id: userId,
+          },
+          image: downloadURL,
+        };
+        onSend([imageMessage]);
+      } catch (error) {
+        console.error("Error getting download URL:", error);
+      }
     }).catch(error => {
       console.error("Error uploading image:", error);
     });
   };
 
-  // Function to handle sending location
+  // Send user's current location
   const sendLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
@@ -98,90 +113,103 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, storage, onSend, userId })
     }
   };
 
-  // Function to start recording
+  // Start audio recording
   const startRecording = async () => {
     try {
       let permissions = await Audio.requestPermissionsAsync();
-      if (permissions.granted) {
+      if (permissions?.granted) {
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
+          playsInSilentModeIOS: true
         });
-        const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-        recordingObject = recording;
-      } else {
-        Alert.alert('Microphone permission not granted');
+        Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY).then(results => {
+          recordingObject = results.recording;
+          Alert.alert('You are recording...', undefined, [
+            { text: 'Cancel', onPress: () => { stopRecording() } },
+            { text: 'Stop and Send', onPress: () => { sendRecordedSound() } },
+          ],
+            { cancelable: false }
+          );
+        })
       }
     } catch (err) {
-      Alert.alert('Failed to start recording', err.message);
+      Alert.alert('Failed to record!');
+    }
+  }
+
+  // Stop recording and unload the recording object
+  const stopRecording = async () => {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: false
+    });
+    await recordingObject.stopAndUnloadAsync();
+  }
+
+  // Upload recorded audio and send it as a message
+  const sendRecordedSound = async () => {
+    try {
+      await stopRecording();
+      if (!recordingObject) {
+        console.error("Recording object is not initialized");
+        return;
+      }
+      const uri = await recordingObject.getURI();
+      const uniqueRefString = generateReference(uri);
+      const newUploadRef = ref(storage, `audios/${uniqueRefString}`);
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      uploadBytes(newUploadRef, blob).then(async (snapshot) => {
+        const soundURL = await getDownloadURL(snapshot.ref);
+        onSend([{
+          audio: soundURL,
+          _id: Math.round(Math.random() * 1000000),
+          createdAt: new Date(),
+          user: { _id: userId }
+        }]);
+      });
+    } catch (error) {
+      console.error("Error in sendRecordedSound:", error);
     }
   };
 
-  // Function to stop recording
-  const stopRecording = async () => {
-    await recordingObject.stopAndUnloadAsync();
-  };
-
-  // Function to send recorded audio
-  const sendRecordedSound = async () => {
-    await stopRecording();
-    const uri = await recordingObject.getURI();
-    const uniqueRefString = generateReference(uri);
-    const newUploadRef = ref(storage, `audios/${uniqueRefString}`);
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    uploadBytes(newUploadRef, blob).then(async (snapshot) => {
-      const audioURL = await getDownloadURL(snapshot.ref);
-      onSend([{ _id: Math.round(Math.random() * 1000000), createdAt: new Date(), user: { _id: userId }, audio: audioURL }]);
-    });
-  };
-
-  // Display the action sheet with options
+  // Display an action sheet with various options
   const onActionPress = () => {
     const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Record a Sound', 'Cancel'];
     const cancelButtonIndex = options.length - 1;
 
     showActionSheetWithOptions(
       { options, cancelButtonIndex },
-      (buttonIndex) => {
+      async (buttonIndex) => {
         switch (buttonIndex) {
           case 0:
             pickImage();
-            break;
+            return;
           case 1:
             takePhoto();
-            break;
+            return;
           case 2:
             sendLocation();
-            break;
+            return;
           case 3:
             startRecording();
-            break;
+            return;
+          default:
         }
-      }
+      },
     );
   };
 
-  // useEffect to handle the cleanup of recordingObject
-  useEffect(() => {
-    return () => {
-      if (recordingObject) {
-        recordingObject.stopAndUnloadAsync();
-      }
-    };
-  }, []);
-
-  // Render the '+' icon for custom actions
   return (
     <TouchableOpacity style={styles.container} onPress={onActionPress}>
-      <View style={styles.wrapper}>
-        <Text style={styles.iconText}>+</Text>
+      <View style={[styles.wrapper, wrapperStyle]}>
+        <Text style={[styles.iconText, iconTextStyle]}>+</Text>
       </View>
     </TouchableOpacity>
   );
-};
+}
 
-// Styles for the custom actions component
 const styles = StyleSheet.create({
   container: {
     width: 26,
