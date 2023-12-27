@@ -1,7 +1,7 @@
 // Chat.js
 
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, View, Platform, KeyboardAvoidingView, TouchableOpacity, Text } from 'react-native';
 import { GiftedChat, InputToolbar } from "react-native-gifted-chat";
 import { collection, query, orderBy, onSnapshot, addDoc } from "firebase/firestore";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,35 +9,82 @@ import CustomActions from './CustomActions';
 import MapView from 'react-native-maps';
 import { Audio } from 'expo-av';
 
+// AudioPlayer component to handle audio playback
+const AudioPlayer = ({ audioUri }) => {
+  const [sound, setSound] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Function to play or pause the audio
+  const togglePlayPause = async () => {
+    if (!sound) {
+      // Load and play the sound
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri: audioUri });
+      newSound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+      setSound(newSound);
+      await newSound.playAsync();
+    } else {
+      // Toggle between play and pause
+      if (isPlaying) {
+        await sound.pauseAsync();
+      } else {
+        await sound.playAsync();
+      }
+    }
+  };
+
+  // Update component state based on playback status
+  const onPlaybackStatusUpdate = (status) => {
+    setIsPlaying(status.isPlaying);
+    if (status.didJustFinish) {
+      // Reset the sound object after playback finishes
+      sound.unloadAsync();
+      setSound(null);
+    }
+  };
+
+  // Clean up function to unload sound
+  useEffect(() => {
+    return () => {
+      sound?.unloadAsync();
+    };
+  }, [sound]);
+
+  // Render Play/Pause button
+  const renderPlayPauseButton = () => (
+    <Text style={styles.playAudioText}>{isPlaying ? 'Pause Audio' : 'Play Audio'}</Text>
+  );
+
+  return <TouchableOpacity onPress={togglePlayPause}>{renderPlayPauseButton()}</TouchableOpacity>;
+};
+
+// Main Chat component
 const Chat = ({ route, navigation, db, storage, isConnected }) => {
   const [messages, setMessages] = useState([]);
   const { name, backgroundColor, userId } = route.params;
-  let soundObject = null; // Declare a variable to hold the sound object
 
-  // Sends messages to Firestore
+  // Send messages to Firestore
   const onSend = (newMessages = []) => {
     newMessages.forEach(msg => {
       addDoc(collection(db, "messages"), { ...msg, user: { _id: userId, name }, createdAt: new Date(msg.createdAt) })
+        .catch(error => console.error("Error adding document: ", error));
     });
   };
 
-  // Renders custom action button for additional functionalities
-  const renderCustomActions = (props) => {
-    return <CustomActions {...props} storage={storage} onSend={onSend} />;
-  };
+  // Render additional functionalities like images and audio recording
+  const renderCustomActions = (props) => (
+    <CustomActions {...props} storage={storage} onSend={onSend} userId={userId} />
+  );
 
-  // Conditionally renders the input toolbar based on network connectivity
-  const renderInputToolbar = (props) => {
-    return isConnected ? <InputToolbar {...props} /> : null;
-  };
+  // Render input toolbar only when connected
+  const renderInputToolbar = (props) => isConnected ? <InputToolbar {...props} /> : null;
 
-  // Function to render custom view for location messages
+  // Render location messages as map views
   const renderCustomView = (props) => {
     const { currentMessage } = props;
     if (currentMessage.location) {
       return (
         <MapView
-          style={{ width: 150, height: 100 }}
+          style={styles.mapView}
           region={{
             latitude: currentMessage.location.latitude,
             longitude: currentMessage.location.longitude,
@@ -52,70 +99,48 @@ const Chat = ({ route, navigation, db, storage, isConnected }) => {
     return null;
   };
 
-  const renderMessageAudio = (props) => {
-    if (props.currentMessage.audio) {
-      return (
-        <TouchableOpacity
-          style={{ padding: 10, backgroundColor: "#ddd", borderRadius: 10, margin: 5 }}
-          onPress={async () => {
-            if (soundObject) {
-              soundObject.unloadAsync();
-            }
-            const { sound } = await Audio.Sound.createAsync({ uri: props.currentMessage.audio });
-            soundObject = sound;
-            await sound.playAsync();
-          }}
-        >
-          <Text>Play Audio</Text>
-        </TouchableOpacity>
-      );
-    }
-    return null;
-  };
+  // Render custom audio component
+  const renderMessageAudio = (props) => (
+    props.currentMessage.audio ? <AudioPlayer audioUri={props.currentMessage.audio} /> : null
+  );
 
-
+  // Set up Firestore listener and load messages from storage
   useEffect(() => {
     navigation.setOptions({ title: name });
-
     const initialMessages = [{ _id: 2, text: `${name} has entered the chat`, createdAt: new Date(), system: true }];
-
     const unsubscribe = isConnected ? setupFirestoreListener() : loadMessagesFromStorage();
-
     return unsubscribe;
 
     function setupFirestoreListener() {
       const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-      return onSnapshot(q, (snapshot) => {
-        const newMessages = snapshot.docs.map(doc => {
-          const data = doc.data();
-          const message = { _id: doc.id, text: data.text, createdAt: new Date(data.createdAt.seconds * 1000), user: data.user };
-          if (data.image) {
-            message.image = data.image;
-          }
-          if (data.location) {
-            message.location = data.location;
-          }
-          return message;
-        });
-        AsyncStorage.setItem('messages', JSON.stringify(newMessages));
-        setMessages(GiftedChat.append(initialMessages, newMessages));
-      });
+      return onSnapshot(q, snapshot => processFirestoreSnapshot(snapshot, initialMessages));
     }
 
-    async function loadMessagesFromStorage() {
-      const storedMessages = await AsyncStorage.getItem('messages');
-      if (storedMessages) setMessages(JSON.parse(storedMessages));
+    function loadMessagesFromStorage() {
+      AsyncStorage.getItem('messages').then(storedMessages => {
+        if (storedMessages) setMessages(JSON.parse(storedMessages));
+      });
     }
   }, [isConnected, db, route.params]);
 
-  useEffect(() => {
-    // Cleanup function to unload sound object
-    return () => {
-      if (soundObject) {
-        soundObject.unloadAsync();
-      }
-    };
-  }, []);
+  // Process Firestore snapshot for new messages
+  const processFirestoreSnapshot = (snapshot, initialMessages) => {
+    const newMessages = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        _id: doc.id,
+        text: data.text,
+        createdAt: new Date(data.createdAt.seconds * 1000),
+        user: data.user,
+        image: data.image,
+        location: data.location,
+        audio: data.audio,
+      };
+    });
+    AsyncStorage.setItem('messages', JSON.stringify(newMessages))
+      .catch(error => console.error("Error saving messages to AsyncStorage: ", error));
+    setMessages(GiftedChat.append(initialMessages, newMessages));
+  };
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -134,6 +159,22 @@ const Chat = ({ route, navigation, db, storage, isConnected }) => {
   );
 };
 
-const styles = StyleSheet.create({ container: { flex: 1 } });
+// Styles for the components
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  playAudioText: {
+    color: 'blue',
+    textDecorationLine: 'underline',
+    padding: 10,
+    textAlign: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    margin: 5,
+  },
+  mapView: {
+    width: 150,
+    height: 100,
+  },
+});
 
 export default Chat;
