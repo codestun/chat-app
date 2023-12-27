@@ -3,18 +3,19 @@
 ## Overview
 This is a chat application designed for mobile phones, built using React Native,
 which means it works on both Android and iOS.
-The app lets users chat, share photos, and their location.
+The app lets users chat, share photos, their location, and audio recordings.
 
 ## Simple Objective
 The main goal of this project is to create an easy-to-use chat app that works on any smartphone,
-allowing people to talk, share pictures, and show their location using their phone's map.
+allowing people to talk, share pictures, audio recordings and location using their phone's map.
 
 ## Key Features
 - **User Engagement**: Simple and intuitive interface for users to engage in chat rooms.
-- **Communication Tools**: Exchange messages, share images, and current location.
+- **Communication Tools**: Exchange messages, share images, location, and audio recordings.
 - **Offline Accessibility**: Read messages offline.
 - **Customization**: Choose color themes and see names displayed.
 - **Accessibility**: Designed for accessibility, including screen reader compatibility.
+- **Audio Recording and Playback**: Record and play back audio messages within the chat.
 
 ## Technical Specifications
 - **Built With React Native**: For Android and iOS compatibility.
@@ -24,7 +25,7 @@ allowing people to talk, share pictures, and show their location using their pho
   - Chats in Google Firestore Database.
   - Anonymous sign-in with Firebase.
   - Local chat history storage.
-  - Image sharing and storage in Firebase Cloud Storage.
+  - Image and audio file sharing and storage in Firebase Cloud Storage.
   - Location sharing using GPS.
 
 ## Development Environment Setup
