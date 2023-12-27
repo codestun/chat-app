@@ -19,8 +19,8 @@ const AudioPlayer = ({ audioUri }) => {
     if (!sound) {
       // Load and play the sound
       const { sound: newSound } = await Audio.Sound.createAsync({ uri: audioUri });
-      newSound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
       setSound(newSound);
+      newSound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
       await newSound.playAsync();
     } else {
       // Toggle between play and pause
@@ -34,27 +34,41 @@ const AudioPlayer = ({ audioUri }) => {
 
   // Update component state based on playback status
   const onPlaybackStatusUpdate = (status) => {
-    setIsPlaying(status.isPlaying);
     if (status.didJustFinish) {
-      // Reset the sound object after playback finishes
-      sound.unloadAsync();
-      setSound(null);
+      setIsPlaying(false);
+      // Reload sound to enable replaying
+      loadSound();
+    } else {
+      setIsPlaying(status.isPlaying);
     }
   };
 
-  // Clean up function to unload sound
+  // Load sound
+  const loadSound = async () => {
+    if (sound) {
+      await sound.unloadAsync();
+    }
+    const { sound: newSound } = await Audio.Sound.createAsync({ uri: audioUri });
+    setSound(newSound);
+    newSound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+  };
+
+  // Initialize sound on mount and clean up on unmount
   useEffect(() => {
+    loadSound();
     return () => {
       sound?.unloadAsync();
     };
-  }, [sound]);
+  }, [audioUri]);
 
   // Render Play/Pause button
-  const renderPlayPauseButton = () => (
-    <Text style={styles.playAudioText}>{isPlaying ? 'Pause Audio' : 'Play Audio'}</Text>
+  return (
+    <TouchableOpacity onPress={togglePlayPause}>
+      <Text style={styles.playAudioText}>
+        {isPlaying ? 'Pause' : 'Play'} Audio
+      </Text>
+    </TouchableOpacity>
   );
-
-  return <TouchableOpacity onPress={togglePlayPause}>{renderPlayPauseButton()}</TouchableOpacity>;
 };
 
 // Main Chat component
