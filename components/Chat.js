@@ -63,7 +63,11 @@ const AudioPlayer = ({ audioUri }) => {
 
   // Render Play/Pause button
   return (
-    <TouchableOpacity onPress={togglePlayPause}>
+    <TouchableOpacity
+      onPress={togglePlayPause}
+      accessible
+      accessibilityLabel={isPlaying ? 'Pause Audio' : 'Play Audio'}
+    >
       <Text style={styles.playAudioText}>
         {isPlaying ? 'Pause' : 'Play'} Audio
       </Text>
@@ -107,6 +111,8 @@ const Chat = ({ route, navigation, db, storage, isConnected }) => {
           }}
           scrollEnabled={false}
           zoomEnabled={false}
+          accessible
+          accessibilityLabel="Map showing location"
         />
       );
     }

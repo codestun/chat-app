@@ -52,6 +52,8 @@ const Start = ({ navigation }) => {
             value={name}
             onChangeText={setName}
             placeholder="Your Name"
+            accessible
+            accessibilityLabel="Input your name"
           />
 
           {/* Color options */}
@@ -66,6 +68,8 @@ const Start = ({ navigation }) => {
                     { backgroundColor: color },
                   ]}
                   onPress={() => handleColorChange(color)}
+                  accessible
+                  accessibilityLabel={`Select ${color} as background color`}
                 />
               ))}
             </View>
